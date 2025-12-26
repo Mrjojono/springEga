@@ -1,0 +1,40 @@
+enum Sexe {
+    HOMME
+    FEMME
+    AUTRE
+}
+
+type Client {
+    id: ID!
+    nom: String!
+    prenom: String!
+    dateNaissance: String
+    sexe: Sexe
+    adresse: String
+    email: String
+    telephone: String
+    nationalite: String
+}
+
+input ClientInput {
+    nom: String!
+    prenom: String!
+    dateNaissance: String
+    sexe: Sexe
+    adresse: String
+    email: String
+    telephone: String
+    nationalite: String
+}
+
+
+type Query {
+    clients: [Client]
+    client(id: ID!): Client
+}
+
+type Mutation {
+    createClient(input: ClientInput!): Client
+    updateClient(id: ID!, input: ClientInput!): Client
+    deleteClient(id: ID!): Boolean
+}
