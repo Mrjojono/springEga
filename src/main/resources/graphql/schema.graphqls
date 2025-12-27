@@ -4,6 +4,12 @@ enum Sexe {
     AUTRE
 }
 
+enum TypeCompte {
+COURANT,
+EPARGNE,
+PROFESSIONNEL
+}
+
 type Client {
     id: ID!
     nom: String!
@@ -15,6 +21,24 @@ type Client {
     telephone: String
     nationalite: String
 }
+
+type Compte {
+    id: ID!
+    numero: String!
+    typeCompte: TypeCompte
+    dateCreation:String
+    solde:Int
+    proprietaire:Client
+}
+
+input CompteInput{
+    numero: String!
+    typeCompte: TypeCompte
+    dateCreation:String
+    solde:Int
+    proprietaireId:ID
+}
+
 
 input ClientInput {
     nom: String!
@@ -31,10 +55,13 @@ input ClientInput {
 type Query {
     clients: [Client]
     client(id: ID!): Client
+    comptes:[Compte]
 }
 
 type Mutation {
     createClient(input: ClientInput!): Client
-    updateClient(id: ID!, input: ClientInput!): Client
-    deleteClient(id: ID!): Boolean
+    deleteClient(id : ID!) : Boolean
+    updateClient(id:ID!, client:ClientInput!):Client
+    createCompte(input:CompteInput!) : Compte
+    deleteCompte(id: ID!): Boolean
 }

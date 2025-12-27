@@ -1,11 +1,9 @@
 package ega.api.egafinance.repository;
 
-import ega.api.egafinance.entity.Client;
+import ega.api.egafinance.entity.Compte;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface ClientRepository extends JpaRepository<Client, String> {
-
-
+public interface  CompteRepository extends JpaRepository<Compte,String> {
 }
