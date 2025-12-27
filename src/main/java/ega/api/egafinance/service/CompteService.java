@@ -1,6 +1,7 @@
 package ega.api.egafinance.service;
 
 import ega.api.egafinance.dto.CompteInput;
+import ega.api.egafinance.dto.CompteUpdateInput;
 import ega.api.egafinance.entity.Client;
 import ega.api.egafinance.entity.Compte;
 import ega.api.egafinance.exception.ResourceNotFoundException;
@@ -11,7 +12,9 @@ import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -24,6 +27,7 @@ public class CompteService implements ICompteService {
     private final CompteMapper compteMapper;
     private final CompteRepository compteRepository;
     private final ClientRepository clientRepository;
+    private final TransactionService transactionService;
 
 
     /**
@@ -34,6 +38,11 @@ public class CompteService implements ICompteService {
         return compteRepository.findAll();
     }
 
+
+    public  List<Compte> getPagedCompte(Pageable pageable){
+        Page<Compte> comptePage = compteRepository.findAll(pageable);
+        return  comptePage.getContent();
+    }
 
     /**
      * @param compteInput
@@ -79,15 +88,34 @@ public class CompteService implements ICompteService {
 
     /**
      * @param id
-     * @param compteInput
+     * @param compteUpdateInput
      * @return
      */
     @Override
-    public Compte updateCompte(String id, CompteInput compteInput) {
-        Compte existingCompte = compteRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException(
-                "Compte non trouvé avec l'id : " + id
-        ));
-        compteMapper.updateCompteFromInput(compteInput, existingCompte);
+    @Transactional
+    public Compte updateCompte(String id, CompteUpdateInput compteUpdateInput) {
+        Compte existingCompte = compteRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Compte not found with ID: " + id
+                ));
+
+        if (compteUpdateInput.getNumero() != null) {
+            existingCompte.setNumero(compteUpdateInput.getNumero());
+        }
+        if (compteUpdateInput.getSolde() != null) {
+            existingCompte.setSolde(compteUpdateInput.getSolde());
+        }
+        if (compteUpdateInput.getTypeCompte() != null) {
+            existingCompte.setTypeCompte(compteUpdateInput.getTypeCompte());
+        }
+        if (compteUpdateInput.getProprietaireId() != null) {
+            Client proprietaire = clientRepository.findById(compteUpdateInput.getProprietaireId())
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Client not found with ID: " + compteUpdateInput.getProprietaireId()
+                    ));
+            existingCompte.setClient(proprietaire);
+        }
+
         return compteRepository.save(existingCompte);
     }
 

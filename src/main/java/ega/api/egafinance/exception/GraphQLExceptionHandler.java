@@ -13,7 +13,6 @@ public class GraphQLExceptionHandler extends DataFetcherExceptionResolverAdapter
     @Override
     protected GraphQLError resolveToSingleError(Throwable ex, DataFetchingEnvironment env) {
 
-        // Gestion de ResourceNotFoundException
         if (ex instanceof ResourceNotFoundException) {
             return GraphqlErrorBuilder.newError()
                     .errorType(ErrorType.NOT_FOUND)
@@ -23,7 +22,7 @@ public class GraphQLExceptionHandler extends DataFetcherExceptionResolverAdapter
                     .build();
         }
 
-        // Gestion de IllegalArgumentException (validation)
+
         if (ex instanceof IllegalArgumentException) {
             return GraphqlErrorBuilder.newError()
                     .errorType(ErrorType.BAD_REQUEST)
@@ -33,7 +32,7 @@ public class GraphQLExceptionHandler extends DataFetcherExceptionResolverAdapter
                     .build();
         }
 
-        // Autres exceptions
+
         return GraphqlErrorBuilder.newError()
                 .errorType(ErrorType.INTERNAL_ERROR)
                 .message("Une erreur est survenue : " + ex.getMessage())

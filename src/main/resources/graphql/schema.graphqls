@@ -31,14 +31,27 @@ type Compte {
     proprietaire:Client
 }
 
-input CompteInput{
-    numero: String!
-    typeCompte: TypeCompte
+
+type Transaction {
+    id: ID!
+    montant: Int!
     dateCreation:String
+    dateUpdate:String
+    compteSource:Compte
+    compteDestination:Compte
+}
+
+input TransactionInput{
+    montant:Int!
+    compte_source_Id:ID
+    compte_destination_Id:ID
+}
+input CompteInput{
+    numero: String
+    typeCompte: TypeCompte
     solde:Int
     proprietaireId:ID
 }
-
 
 input ClientInput {
     nom: String!
@@ -53,15 +66,20 @@ input ClientInput {
 
 
 type Query {
-    clients: [Client]
     client(id: ID!): Client
-    comptes:[Compte]
+    clients(page: Int, size: Int): [Client]
+    comptes(page: Int, size: Int): [Compte]
+    transactions(page:Int,size:Int): [Transaction]
 }
+
+
 
 type Mutation {
     createClient(input: ClientInput!): Client
     deleteClient(id : ID!) : Boolean
     updateClient(id:ID!, client:ClientInput!):Client
+    updateCompte(id:ID!,compte:CompteInput!):Compte
     createCompte(input:CompteInput!) : Compte
     deleteCompte(id: ID!): Boolean
+    versement(input:TransactionInput!):Transaction
 }

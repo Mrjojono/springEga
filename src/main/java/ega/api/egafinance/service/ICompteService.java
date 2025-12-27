@@ -1,6 +1,7 @@
 package ega.api.egafinance.service;
 
 import ega.api.egafinance.dto.CompteInput;
+import ega.api.egafinance.dto.CompteUpdateInput;
 import ega.api.egafinance.entity.Compte;
 
 import java.util.List;
@@ -15,7 +16,7 @@ public interface ICompteService {
     public Boolean deleteCompte(String id);
 
     //modifier un compte
-    public Compte updateCompte(String id, CompteInput compteInput);
+    public Compte updateCompte(String id, CompteUpdateInput compteUpdateInput);
 
     //recuperer tous les comptes
     public List<Compte> showCompte();

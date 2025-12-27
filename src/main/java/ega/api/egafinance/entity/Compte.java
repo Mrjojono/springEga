@@ -25,9 +25,23 @@ public class Compte {
 
     private LocalDateTime dateCreation;
 
+    private LocalDateTime dateUpdate;
+
     private BigDecimal solde;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "client_id")
     private Client client;
+
+
+    @PrePersist
+    public void onCreate() {
+        this.dateCreation = LocalDateTime.now();
+        this.dateUpdate = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    public void onUpdate() {
+        this.dateUpdate = LocalDateTime.now();
+    }
 }
