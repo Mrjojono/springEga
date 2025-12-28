@@ -59,7 +59,7 @@ public class GraphQLSecurityFilter extends OncePerRequestFilter {
                     log.info("Détails utilisateur chargé : {}", userDetails.getUsername());
                     log.info("Autorité unique pour l'utilisateur : {}", userDetails.getAuthorities());
 
-                    // Valider que le token correspond aux détails utilisateur
+
                     if (jwtUtil.validateToken(jwt, userDetails)) {
                         log.info("Token JWT valide ✅");
 
@@ -73,7 +73,7 @@ public class GraphQLSecurityFilter extends OncePerRequestFilter {
                                 new UsernamePasswordAuthenticationToken(
                                         userDetails,
                                         null,
-                                        List.of(authority) // Définir l'autorité basée sur le rôle
+                                        List.of(authority)
                                 );
 
                         authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
@@ -81,7 +81,7 @@ public class GraphQLSecurityFilter extends OncePerRequestFilter {
 
                         log.info("Contexte de sécurité mis à jour : {}", SecurityContextHolder.getContext().getAuthentication());
                     } else {
-                        log.warn("Token JWT invalide ❌");
+                        log.warn("Token JWT invalide ");
                     }
 
                 } catch (Exception e) {

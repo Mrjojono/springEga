@@ -37,6 +37,7 @@ public class Transaction {
 
     private LocalDateTime dateUpdate;
 
+    private  TransactionType transactionType;
 
     @ManyToOne
     @JoinColumn(name = "compte_source_id")

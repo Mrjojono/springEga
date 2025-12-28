@@ -59,8 +59,7 @@ public class AuthService implements IAuthService {
      */
     public User updateUser(String userId, UserRegisterInput userRegisterInput) {
         // Récupère l'utilisateur existant depuis la base de données
-        User existingUser = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User existingUser = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
 
         // Utilise le mapper pour mettre à jour les propriétés de l'utilisateur
         userMapper.register(userRegisterInput, existingUser);

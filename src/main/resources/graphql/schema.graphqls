@@ -3,7 +3,6 @@ enum Sexe {
     FEMME
     AUTRE
 }
-
 enum Role {
     CLIENT,
     AGENT_ADMIN,
@@ -11,12 +10,20 @@ enum Role {
     USER,
     ADMIN
 }
-
 enum TypeCompte {
     COURANT,
     EPARGNE,
     PROFESSIONNEL
 }
+
+enum TransactionType {
+DEPOT,
+RETRAIT,
+VIREMENT,
+PAIEMENT,
+REMBOURSEMENT
+}
+
 
 type User {
     id: ID!
@@ -69,6 +76,7 @@ input TransactionInput{
     montant:Int!
     compte_source_Id:ID
     compte_destination_Id:ID
+    transactionType:TransactionType!
 }
 input CompteInput{
     numero: String
@@ -76,7 +84,6 @@ input CompteInput{
     solde:Int
     proprietaireId:ID
 }
-
 input ClientInput {
     nom: String!
     prenom: String!
@@ -91,20 +98,23 @@ input ClientInput {
 }
 
 
+
 type Query {
     client(id: ID!): Client
     clients(page: Int, size: Int): [Client]
     comptes(page: Int, size: Int): [Compte]
     transactions(page:Int,size:Int): [Transaction]
+
+    getTransactions(compteId:String,startDate:String,endDate:String): [Transaction]
 }
-
-
 
 type Mutation {
     createClient(input: ClientInput!): Client
     deleteClient(id : ID!) : Boolean
+
     updateClient(id:ID!, client:ClientInput!):Client
     updateCompte(id:ID!,compte:CompteInput!):Compte
+
     createCompte(input:CompteInput!) : Compte
     deleteCompte(id: ID!): Boolean
     versement(input:TransactionInput!):Transaction
