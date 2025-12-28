@@ -10,6 +10,14 @@ EPARGNE,
 PROFESSIONNEL
 }
 
+type User {
+    id: ID!
+    nom: String!
+    prenom: String!
+    email: String!
+    telephone: String
+    role: String
+}
 type Client {
     id: ID!
     nom: String!
@@ -21,7 +29,6 @@ type Client {
     telephone: String
     nationalite: String
 }
-
 type Compte {
     id: ID!
     numero: String!
@@ -30,8 +37,6 @@ type Compte {
     solde:Int
     proprietaire:Client
 }
-
-
 type Transaction {
     id: ID!
     montant: Int!
@@ -41,6 +46,14 @@ type Transaction {
     compteDestination:Compte
 }
 
+input UserInput {
+    nom: String
+    prenom: String
+    email: String!
+    telephone: String
+    password: String!
+    role: String
+}
 input TransactionInput{
     montant:Int!
     compte_source_Id:ID
@@ -62,6 +75,8 @@ input ClientInput {
     email: String
     telephone: String
     nationalite: String
+    password:String
+    role:String
 }
 
 
@@ -82,4 +97,10 @@ type Mutation {
     createCompte(input:CompteInput!) : Compte
     deleteCompte(id: ID!): Boolean
     versement(input:TransactionInput!):Transaction
+
+    createUser(input: ClientInput!): User
+    updateUser(id: ID!, user: UserInput!): User
+    deleteUser(id: ID!): Boolean
+
+    login(email: String!, password: String!): String!
 }

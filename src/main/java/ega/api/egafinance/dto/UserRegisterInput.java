@@ -1,14 +1,14 @@
 package ega.api.egafinance.dto;
 
-import ega.api.egafinance.entity.*;
+import ega.api.egafinance.entity.Client;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 
 import java.time.LocalDate;
-import java.util.Date;
 
 @Data
-public class ClientInput {
+public class UserRegisterInput {
+
     @NotBlank(message = "Le nom est obligatoire")
     @Size(min = 2, max = 50, message = "Le nom doit contenir entre 2 et 50 caractères")
     private String nom;
