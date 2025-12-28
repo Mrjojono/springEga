@@ -2,6 +2,7 @@ package ega.api.egafinance.service;
 
 import ega.api.egafinance.dto.TransactionInput;
 import ega.api.egafinance.entity.Compte;
+import ega.api.egafinance.entity.Releve;
 import ega.api.egafinance.entity.Transaction;
 import ega.api.egafinance.exception.ResourceNotFoundException;
 import ega.api.egafinance.mapper.TransactionMapper;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -126,8 +128,7 @@ public class TransactionService implements ITransactionService {
 
 
     @Override
-    public List<Transaction> getTransactionsByCompteAndPeriod(
-            String compteId, LocalDateTime startDate, LocalDateTime endDate, String loggedUserRole, String loggedUserEmail) {
+    public List<Transaction> getTransactionsByCompteAndPeriod(String compteId, LocalDateTime startDate, LocalDateTime endDate, String loggedUserRole, String loggedUserEmail) {
 
         if (startDate.isAfter(endDate)) {
             throw new IllegalArgumentException("La date de début doit être antérieure à la date de fin.");
@@ -151,4 +152,53 @@ public class TransactionService implements ITransactionService {
         sourceTransactions.addAll(destinationTransactions);
         return sourceTransactions;
     }
+
+    public Releve getReleve(String compteId, LocalDateTime startDate, LocalDateTime endDate) {
+
+        if (startDate.isAfter(endDate)) {
+            throw new IllegalArgumentException("La date de début doit être antérieure à la date de fin !");
+        }
+
+        Compte compte = compteRepository.findById(compteId).orElseThrow(() -> new ResourceNotFoundException("Compte introuvable avec l'ID : " + compteId));
+
+        BigDecimal soldeInitial = compte.getSolde();
+        BigDecimal soldeFinal = soldeInitial;
+
+
+        List<Transaction> allTransactions = transactionRepository.findAllByCompteSourceIdOrCompteDestinationId(compteId, compteId);
+
+        // Liste pour stocker uniquement les transactions dans la période demandée
+        List<Transaction> filteredTransactions = new ArrayList<>();
+
+        for (Transaction transaction : allTransactions) {
+
+            if (transaction.getDateCreation().isBefore(startDate)) {
+                if (transaction.getCompteSource() != null && transaction.getCompteSource().getId().equals(compteId)) {
+                    soldeInitial = soldeInitial.subtract(transaction.getMontant());
+                } else if (transaction.getCompteDestination() != null && transaction.getCompteDestination().getId().equals(compteId)) {
+                    soldeInitial = soldeInitial.add(transaction.getMontant());
+                }
+            }
+
+            if (!transaction.getDateCreation().isBefore(startDate) && !transaction.getDateCreation().isAfter(endDate)) {
+                filteredTransactions.add(transaction);
+
+                if (transaction.getCompteSource() != null && transaction.getCompteSource().getId().equals(compteId)) {
+                    soldeFinal = soldeFinal.subtract(transaction.getMontant());
+                } else if (transaction.getCompteDestination() != null && transaction.getCompteDestination().getId().equals(compteId)) {
+                    soldeFinal = soldeFinal.add(transaction.getMontant());
+                }
+            }
+        }
+
+
+        Releve releve = new Releve();
+        releve.setCompte(compte);
+        releve.setSoldeInitial(soldeInitial);
+        releve.setSoldeFinal(soldeFinal);
+        releve.setTransactions(filteredTransactions);
+
+        return releve;
+    }
+
 }

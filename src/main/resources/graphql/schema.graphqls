@@ -17,13 +17,12 @@ enum TypeCompte {
 }
 
 enum TransactionType {
-DEPOT,
-RETRAIT,
-VIREMENT,
-PAIEMENT,
-REMBOURSEMENT
+    DEPOT,
+    RETRAIT,
+    VIREMENT,
+    PAIEMENT,
+    REMBOURSEMENT
 }
-
 
 type User {
     id: ID!
@@ -60,6 +59,13 @@ type Transaction {
     compteSource:Compte
     compteDestination:Compte
 }
+type Releve{
+    compte:Compte
+    soldeInitial:Int
+    soldeFinal:Int
+    transactions:[Transaction]
+}
+
 
 input UserInput {
     nom: String
@@ -106,6 +112,8 @@ type Query {
     transactions(page:Int,size:Int): [Transaction]
 
     getTransactions(compteId:String,startDate:String,endDate:String): [Transaction]
+
+    getReleve(compteId:String,startDate:String,endDate:String):[Releve]
 }
 
 type Mutation {

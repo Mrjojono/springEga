@@ -25,6 +25,10 @@ public class ClientService implements IClientService {
     private final ClientMapper clientMapper;
 
 
+    public  Optional<Client> getClient(String id){
+        return clientRepository.findById(id);
+    }
+
     public Optional<Client> getOneClientByEmail(String email){
         return clientRepository.findByEmail(email);
     }
