@@ -4,10 +4,18 @@ enum Sexe {
     AUTRE
 }
 
+enum Role {
+    CLIENT,
+    AGENT_ADMIN,
+    SUPER_ADMIN,
+    USER,
+    ADMIN
+}
+
 enum TypeCompte {
-COURANT,
-EPARGNE,
-PROFESSIONNEL
+    COURANT,
+    EPARGNE,
+    PROFESSIONNEL
 }
 
 type User {
@@ -16,7 +24,7 @@ type User {
     prenom: String!
     email: String!
     telephone: String
-    role: String
+    role: Role
 }
 type Client {
     id: ID!
@@ -52,7 +60,10 @@ input UserInput {
     email: String!
     telephone: String
     password: String!
-    role: String
+    role: Role
+    sexe:Sexe
+    adresse: String
+    nationalite: String
 }
 input TransactionInput{
     montant:Int!
@@ -76,7 +87,7 @@ input ClientInput {
     telephone: String
     nationalite: String
     password:String
-    role:String
+    role:Role
 }
 
 
@@ -98,7 +109,8 @@ type Mutation {
     deleteCompte(id: ID!): Boolean
     versement(input:TransactionInput!):Transaction
 
-    createUser(input: ClientInput!): User
+    createUser(input: UserInput!): User
+
     updateUser(id: ID!, user: UserInput!): User
     deleteUser(id: ID!): Boolean
 

@@ -5,9 +5,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Data
 @Entity
@@ -21,12 +18,8 @@ public class User {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
-    private String nom;
-    private String prenom;
     private String email;
-    private String telephone;
     private String password;
-
 
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false)
@@ -34,8 +27,9 @@ public class User {
 
     // Enumération des rôles possibles
     public enum Role {
-        USER,
-        ADMIN
+        CLIENT,
+        AGENT_ADMIN,
+        SUPER_ADMIN
     }
 
 

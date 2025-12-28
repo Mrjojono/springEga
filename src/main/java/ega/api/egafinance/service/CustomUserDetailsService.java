@@ -28,7 +28,10 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
         // Ajouter le rôle unique comme autorité pour Spring Security
-        SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + user.getRole().name());
+        SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + user.getRole());
+
+        System.out.println("Chargement de l'utilisateur : " + username);
+        System.out.println("role de l'utilisateur : " + user.getRole());
 
         return new org.springframework.security.core.userdetails.User(
                 user.getEmail(),

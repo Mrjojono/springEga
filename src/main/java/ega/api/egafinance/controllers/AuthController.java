@@ -33,6 +33,7 @@ public class AuthController {
     private final UserRepository userRepository;
     private final JwtUtil jwtUtil;
 
+
     @MutationMapping
     @PreAuthorize("permitAll()")
     public User createUser(@Valid @Argument("input") UserRegisterInput userRegisterInput) {

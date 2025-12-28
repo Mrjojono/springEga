@@ -28,6 +28,12 @@ public class Client extends User {
 
     private String adresse;
 
+    private String telephone;
+
+    private String nom;
+
+    private String prenom;
+
     private String nationalite;
 
     @OneToMany(mappedBy = "client", cascade = CascadeType.ALL, orphanRemoval = true)

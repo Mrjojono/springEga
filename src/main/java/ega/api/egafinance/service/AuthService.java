@@ -27,7 +27,8 @@ public class AuthService implements IAuthService {
 
 
     /**
-     * Inscrit un utilisateur dans le système
+     * Inscrit un utilisateur dans le système en tant que client en meme temps
+     * la particularité c'est que une personne peut creer un compte et devenir un nouveau client directement
      *
      * @param userRegisterInput Données d'inscription de l'utilisateur
      * @return l'utilisateur enregistré
@@ -39,12 +40,12 @@ public class AuthService implements IAuthService {
         if (userRepository.findByEmail(userRegisterInput.getEmail()).isPresent()) {
             throw new RuntimeException("Email is already in use");
         }
-        User user = userMapper.toUser(userRegisterInput);
+        Client client  =  clientMapper.toClientRegister(userRegisterInput);
 
-        user.setPassword(passwordEncoder.encode(userRegisterInput.getPassword()));
-        user.setRole(User.Role.USER);
+        client.setPassword(passwordEncoder.encode(userRegisterInput.getPassword()));
+        client.setRole(User.Role.CLIENT);
 
-        return userRepository.save(user);
+        return  clientRepository.save(client);
     }
 
 
@@ -53,6 +54,7 @@ public class AuthService implements IAuthService {
      *
      * @param userId            Identifiant de l'utilisateur à mettre à jour
      * @param userRegisterInput Nouvelles données de l'utilisateur
+     *                          ici on ne peut mettre a jour que le mot de passe et l'email
      * @return l'utilisateur mis à jour
      */
     public User updateUser(String userId, UserRegisterInput userRegisterInput) {

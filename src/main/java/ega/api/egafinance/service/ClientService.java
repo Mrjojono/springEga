@@ -24,10 +24,17 @@ public class ClientService implements IClientService {
     @Autowired
     private final ClientMapper clientMapper;
 
+
+    public Optional<Client> getOneClientByEmail(String email){
+        return clientRepository.findByEmail(email);
+    }
+
     @Override
     public List<Client> showClient() {
         return clientRepository.findAll();
     }
+
+
 
     /**
      * @param client

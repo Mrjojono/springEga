@@ -86,10 +86,8 @@ public class JwtUtil {
         return extractClaim(token, Claims::getExpiration);
     }
 
-    // ✅ Extraire les rôles depuis le token
-    // ✅ Extraire le rôle unique depuis le token
     public String extractRole(String token) {
         Claims claims = extractAllClaims(token);
-        return claims.get("role", String.class); // Retourne le rôle unique (exemple : "USER" ou "ADMIN")
+        return claims.get("role", String.class);
     }
 }
