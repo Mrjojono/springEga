@@ -14,11 +14,6 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 public class CompteInput {
 
-    @NotBlank(message = "Le numéro de compte est obligatoire")
-    @Size(min = 10, max = 34, message = "Le numéro de compte doit contenir entre 10 et 34 caractères")
-    @ValidIban(message = "Le numéro IBAN n'est pas valide")
-    private String numero;
-
     @NotNull(message = "Le type de compte est obligatoire")
     private TypeCompte typeCompte;
 

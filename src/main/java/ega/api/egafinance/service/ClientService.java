@@ -20,16 +20,18 @@ public class ClientService implements IClientService {
 
     @Autowired
     private ClientRepository clientRepository;
-
     @Autowired
     private final ClientMapper clientMapper;
 
+    @Autowired
+    private EmailService emailService;
 
-    public  Optional<Client> getClient(String id){
+
+    public Optional<Client> getClient(String id) {
         return clientRepository.findById(id);
     }
 
-    public Optional<Client> getOneClientByEmail(String email){
+    public Optional<Client> getOneClientByEmail(String email) {
         return clientRepository.findByEmail(email);
     }
 
@@ -39,7 +41,6 @@ public class ClientService implements IClientService {
     }
 
 
-
     /**
      * @param client
      * @return
@@ -47,7 +48,10 @@ public class ClientService implements IClientService {
     @Override
     @Transactional
     public Client saveClient(Client client) {
-        return clientRepository.save(client);
+        Client savedClient = clientRepository.save(client);
+        // Envoyer l'email après la sauvegarde avec l'identifiant unique
+        emailService.sendWelcomeEmail(savedClient.getEmail(), savedClient.getPrenom(), savedClient.getIdentifiant());
+        return savedClient;
     }
 
     /**

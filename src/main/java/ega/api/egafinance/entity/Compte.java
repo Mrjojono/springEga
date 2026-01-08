@@ -1,6 +1,9 @@
 package ega.api.egafinance.entity;
 
+import ega.api.egafinance.validation.ValidIban;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -18,6 +21,9 @@ public class Compte {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
+    @NotBlank(message = "Le numéro de compte est obligatoire")
+    @Size(min = 10, max = 34, message = "Le numéro de compte doit contenir entre 10 et 34 caractères")
+    @ValidIban(message = "Le numéro IBAN n'est pas valide")
     private String numero;
 
     @Enumerated(EnumType.STRING)

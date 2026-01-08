@@ -15,7 +15,6 @@ enum TypeCompte {
     EPARGNE,
     PROFESSIONNEL
 }
-
 enum TransactionType {
     DEPOT,
     RETRAIT,
@@ -42,6 +41,7 @@ type Client {
     email: String
     telephone: String
     nationalite: String
+    identifiant:String
 }
 type Compte {
     id: ID!
@@ -65,7 +65,10 @@ type Releve{
     soldeFinal:Int
     transactions:[Transaction]
 }
-
+type AuthResponse {
+    token: String!
+    user: User!
+}
 
 input UserInput {
     nom: String
@@ -85,7 +88,6 @@ input TransactionInput{
     transactionType:TransactionType!
 }
 input CompteInput{
-    numero: String
     typeCompte: TypeCompte
     solde:Int
     proprietaireId:ID
@@ -99,7 +101,6 @@ input ClientInput {
     email: String
     telephone: String
     nationalite: String
-    password:String
     role:Role
 }
 
@@ -132,5 +133,5 @@ type Mutation {
     updateUser(id: ID!, user: UserInput!): User
     deleteUser(id: ID!): Boolean
 
-    login(email: String!, password: String!): String!
+    login(email: String!, password: String!): AuthResponse!
 }

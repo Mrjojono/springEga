@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            background-color: #007bff;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .content {
+            padding: 20px;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .id-box {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.2em;
+            border: 1px dashed #007bff;
+            color: #007bff;
+            margin: 20px 0;
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 0.8em;
+            color: #777;
+            margin-top: 20px;
+        }
+    </style>
+    <title>Welcome</title>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>Bienvenue !</h1>
+    </div>
+    <div class="content">
+        <p>Bonjour <strong th:text="${prenom}">Utilisateur</strong>,</p>
+        <p>Nous sommes ravis de vous compter parmi nous. Votre compte a été créé avec succès.</p>
+        <p>Voici votre <strong>identifiant unique</strong> à conserver précieusement :</p>
+
+        <div class="id-box" th:text="${identifiant}">ID-12345</div>
+
+        <p>Vous en aurez besoin pour toutes vos opérations sur la plateforme.</p>
+        <p>À bientôt,<br>L'équipe Support</p>
+    </div>
+    <div class="footer">
+        Ceci est un message automatique, merci de ne pas y répondre.
+    </div>
+</div>
+</body>
+</html>

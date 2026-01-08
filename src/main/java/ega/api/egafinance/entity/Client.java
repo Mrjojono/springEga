@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
@@ -36,6 +37,16 @@ public class Client extends User {
 
     private String nationalite;
 
+    @Column(unique = true, nullable = false)
+    private String identifiant;
+
     @OneToMany(mappedBy = "client", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Compte> comptes = new ArrayList<>();
+
+    @PrePersist
+    public void generateIdentifiant() {
+        if (this.identifiant == null) {
+            this.identifiant = "CLT-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        }
+    }
 }

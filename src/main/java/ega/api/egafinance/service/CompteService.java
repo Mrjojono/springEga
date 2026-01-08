@@ -14,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Pageable;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -37,13 +38,13 @@ public class CompteService implements ICompteService {
         return compteRepository.findAll();
     }
 
-    public Optional<Compte> showCompteById(String id){
-        return  compteRepository.findById(id);
+    public Optional<Compte> showCompteById(String id) {
+        return compteRepository.findById(id);
     }
 
-    public  List<Compte> getPagedCompte(Pageable pageable){
+    public List<Compte> getPagedCompte(Pageable pageable) {
         Page<Compte> comptePage = compteRepository.findAll(pageable);
-        return  comptePage.getContent();
+        return comptePage.getContent();
     }
 
     /**
@@ -55,22 +56,27 @@ public class CompteService implements ICompteService {
     public Compte saveCompte(CompteInput compteInput) {
         Compte compte = compteMapper.toCompte(compteInput);
 
+        Client client = clientRepository.findById(compteInput.getProprietaireId())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Client non trouvé avec l'id : " + compteInput.getProprietaireId()
+                ));
+        compte.setClient(client);
 
-        if (compteInput.getProprietaireId() != null) {
-            Client client = clientRepository.findById(compteInput.getProprietaireId())
-                    .orElseThrow(() -> new ResourceNotFoundException(
-                            "Client non trouvé avec l'id : " + compteInput.getProprietaireId()
-                    ));
-            compte.setClient(client);
+        String numeroGenere = generateNumeroCompte(client);
+        compte.setNumero(numeroGenere);
+
+
+        if (compte.getSolde() == null) {
+            compte.setSolde(BigDecimal.ZERO);
         }
 
-        compte.setDateCreation(LocalDateTime.now());
         return compteRepository.save(compte);
     }
 
+
     /**
      * @param id
-     * @return
+     * @return Boolean
      */
     @Override
     @Transactional
@@ -122,4 +128,20 @@ public class CompteService implements ICompteService {
     }
 
 
+    /**
+     * Génère un numéro de compte type IBAN simplifié
+     * Format : [CODE_PAYS] [CODE_BANQUE] [RANDOM_12_DIGITS]
+     */
+    private String generateNumeroCompte(Client client) {
+        // On récupère les 2 premières lettres de la nationalité (ex: SENEGAL -> SN)
+        String countryCode = "FR"; // Par défaut
+        if (client.getNationalite() != null && client.getNationalite().length() >= 2) {
+            countryCode = client.getNationalite().substring(0, 2).toUpperCase();
+        }
+
+        String bankCode = "7001";
+        long randomPart = (long) (Math.random() * 1_000_000_000_000_00L);
+
+        return String.format("%s%s%014d", countryCode, bankCode, randomPart);
+    }
 }
