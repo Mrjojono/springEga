@@ -4,6 +4,7 @@ import com.resend.Resend;
 import com.resend.core.exception.ResendException;
 import com.resend.services.emails.model.CreateEmailOptions;
 import com.resend.services.emails.model.CreateEmailResponse;
+import ega.api.egafinance.entity.Client;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -51,12 +52,18 @@ public class EmailService {
         context.setVariable("prenom", prenom);
         context.setVariable("identifiant", identifiant);
 
-
         String htmlContent = templateEngine.process("welcome-email", context);
-
 
         sendEmail(to, "Bienvenue parmi nous !", htmlContent);
     }
 
 
+    public void sendActivationEmail(Client client, String activationLink) {
+        Context context = new Context();
+        context.setVariable("prenom", client.getPrenom());
+        context.setVariable("identifiant", client.getIdentifiant());
+        context.setVariable("activationLink", activationLink);
+        String htmlContent = templateEngine.process("activate-web-account", context);
+        sendEmail(client.getEmail(), "Activation de votre compte", htmlContent);
+    }
 }

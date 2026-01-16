@@ -31,10 +31,6 @@ public class Client extends User {
 
     private String telephone;
 
-    private String nom;
-
-    private String prenom;
-
     private String nationalite;
 
     @Column(unique = true, nullable = false)

@@ -54,7 +54,7 @@ public class ClientController {
     }
 
     @MutationMapping
-    @PreAuthorize("hasRole('AGENT_ADMIN') or hasRole('SUPER_ADMIN')")
+   // @PreAuthorize("hasRole('AGENT_ADMIN') or hasRole('SUPER_ADMIN')")
     public Client createClient(@Argument @Valid ClientInput input) {
         Client client = clientMapper.toClient(input);
         return clientService.saveClient(client);

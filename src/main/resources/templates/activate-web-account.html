@@ -86,42 +86,63 @@
             color: #00875A;
             font-weight: bold;
         }
+
+        .security-note {
+            font-size: 13px;
+            color: #64748b;
+            background-color: #f1f5f9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 25px;
+        }
     </style>
-    <title></title>
+    <title>Activation de votre accès Web</title>
 </head>
 <body>
 <div class="wrapper">
     <div class="container">
 
+        <!-- En-tête -->
         <div class="header">
             <p class="brand-name">Ega Finance</p>
         </div>
 
+        <!-- Contenu Principal -->
         <div class="content">
-            <h2>Bienvenue à bord ! </h2>
+            <h2>Demande d'activation Web </h2>
+
             <p>Bonjour <strong class="highlight" th:text="${prenom}">Utilisateur</strong>,</p>
 
-            <p>Nous sommes ravis de vous accompagner dans votre croissance financière. Votre compte a été configuré avec
-                succès.</p>
+            <p>Nous avons bien reçu votre demande d'activation pour l'accès en ligne à votre compte <strong>Ega
+                Finance</strong>.</p>
 
-            <p>Voici votre <strong>identifiant unique</strong>. Conservez-le précieusement, il est la clé de votre
-                compte :</p>
+            <p>Pour des raisons de sécurité, veuillez confirmer que vous êtes bien le titulaire de l'identifiant client
+                suivant :</p>
 
-            <!-- Box Identifiant Style Fintech -->
-            <div class="id-box" th:text="${identifiant}">ID-12345</div>
+            <!-- Box Identifiant Unique -->
+            <div class="id-box" th:text="${identifiant}">CLT-XXXXXXX</div>
 
-            <p>Vous pouvez dès maintenant vous connecter pour gérer vos transactions.</p>
+            <p>Si cet identifiant est correct, veuillez cliquer sur le bouton ci-dessous pour finaliser l'activation,
+                configurer votre mot de passe et accéder à votre espace sécurisé :</p>
 
-            <div style="text-align: center;">
-                <a href="#" class="btn">Accéder à mon compte</a>
+            <div style="text-align: center; margin: 30px 0;">
+                <a th:href="${activationUrl}" class="btn">Finaliser l'activation web</a>
             </div>
 
-            <p style="margin-top: 30px;">À bientôt,<br><strong>L'équipe Ega Finance</strong></p>
+            <!-- Note de sécurité -->
+            <div class="security-note">
+                <strong>Sécurité :</strong> Ce lien est à usage unique et expirera dans 24 heures.
+                Si vous n'êtes pas à l'origine de cette demande, ignorez simplement cet email ou contactez notre
+                support.
+            </div>
+
+            <p style="margin-top: 30px;">À bientôt,<br><strong>L'équipe Sécurité Ega Finance</strong></p>
         </div>
 
+        <!-- Pied de page -->
         <div class="footer">
             &copy; 2026 Ega Finance. "Secure, reliable, and tailored for your financial growth"<br>
-            Ceci est un message automatique, merci de ne pas y répondre.
+            Ceci est un message automatique de sécurité, merci de ne pas y répondre.
         </div>
     </div>
 </div>

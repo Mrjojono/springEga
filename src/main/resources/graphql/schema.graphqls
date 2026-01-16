@@ -69,6 +69,10 @@ type AuthResponse {
     token: String!
     user: User!
 }
+type ActivationResponse {
+    success: Boolean!
+    message: String
+}
 
 input UserInput {
     nom: String
@@ -134,4 +138,8 @@ type Mutation {
     deleteUser(id: ID!): Boolean
 
     login(email: String!, password: String!): AuthResponse!
+
+    completeActivation(token:String!, password:String!):User!
+
+    initiateActivation(identifiant: String!, email: String!): ActivationResponse!
 }

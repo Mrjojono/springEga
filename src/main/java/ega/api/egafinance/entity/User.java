@@ -18,6 +18,9 @@ public class User {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
+    private String nom;
+    private String prenom;
+
     private String email;
     private String password;
 
@@ -29,7 +32,9 @@ public class User {
     public enum Role {
         CLIENT,
         AGENT_ADMIN,
-        SUPER_ADMIN
+        SUPER_ADMIN,
+        USER,
+        ADMIN
     }
 
 

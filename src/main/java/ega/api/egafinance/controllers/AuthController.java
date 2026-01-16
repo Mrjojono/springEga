@@ -1,7 +1,7 @@
 package ega.api.egafinance.controllers;
 
+import ega.api.egafinance.dto.ActivationResponse;
 import ega.api.egafinance.dto.AuthResponse;
-import ega.api.egafinance.dto.ClientInput;
 import ega.api.egafinance.dto.UserRegisterInput;
 import ega.api.egafinance.entity.User;
 import ega.api.egafinance.repository.UserRepository;
@@ -9,7 +9,6 @@ import ega.api.egafinance.service.AuthService;
 import ega.api.egafinance.util.JwtUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.graphql.data.method.annotation.Argument;
 
 import org.springframework.graphql.data.method.annotation.MutationMapping;
@@ -20,7 +19,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Controller;
 
-import java.util.Arrays;
 import java.util.List;
 
 
@@ -59,4 +57,20 @@ public class AuthController {
         return new AuthResponse(token, user);
     }
 
+    @MutationMapping
+    public User completeActivation(@Argument String token, @Argument String password) {
+        return authService.completeActivation(token, password);
+    }
+
+    @MutationMapping
+    public ActivationResponse initiateActivation(@Argument String identifiant, @Argument String email) {
+        try {
+            authService.initiateActivation(identifiant, email);
+            return new ActivationResponse(true, "Un email d'activation a été envoyé avec succès.");
+        } catch (RuntimeException e) {
+            return new ActivationResponse(false, e.getMessage());
+        } catch (Exception e) {
+            return new ActivationResponse(false, "Une erreur technique est survenue. Veuillez réessayer plus tard.");
+        }
+    }
 }

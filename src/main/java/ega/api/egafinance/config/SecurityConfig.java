@@ -35,10 +35,11 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                 )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/graphiql/**", "/graphql").permitAll()
+                        .requestMatchers("/graphiql/**", "/graphql", "/admin/**").permitAll()
+                        .requestMatchers("/admin/**", "/css/**", "/js/**", "/images/**").permitAll()
                         .anyRequest().authenticated()
                 );
 
