@@ -58,8 +58,15 @@ public class AuthController {
     }
 
     @MutationMapping
-    public User completeActivation(@Argument String token, @Argument String password) {
-        return authService.completeActivation(token, password);
+    public ActivationResponse completeActivation(@Argument String token, @Argument String password) {
+        try {
+            authService.completeActivation(token, password);
+            return new ActivationResponse(true, "Un email d'activation a été envoyé avec succès.");
+        } catch (RuntimeException e) {
+            return new ActivationResponse(false, e.getMessage());
+        } catch (Exception e) {
+            return new ActivationResponse(false, "Une erreur technique est survenue. Veuillez réessayer plus tard.");
+        }
     }
 
     @MutationMapping
