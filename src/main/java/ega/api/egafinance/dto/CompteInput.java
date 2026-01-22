@@ -17,6 +17,8 @@ public class CompteInput {
     @NotNull(message = "Le type de compte est obligatoire")
     private TypeCompte typeCompte;
 
+    private String libelle;
+
     @NotNull(message = "Le solde initial est obligatoire")
     @DecimalMin(value = "0.0", message = "Le solde ne peut pas être négatif")
     private BigDecimal solde;

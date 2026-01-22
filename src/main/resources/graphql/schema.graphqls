@@ -22,6 +22,27 @@ enum TransactionType {
     PAIEMENT,
     REMBOURSEMENT
 }
+enum StatutCompte {
+    ACTIF,
+    SUSPENDU,
+    FERME,
+    EN_ATTENTE,
+    INACTIF
+}
+
+type Me {
+    id: ID!
+    nom: String!
+    prenom: String!
+    email: String!
+    telephone: String
+    role: Role!
+    adresse: String
+    sexe: Sexe
+    nationalite: String
+    dateNaissance: String
+    identifiant: String
+}
 
 type User {
     id: ID!
@@ -33,6 +54,7 @@ type User {
     adresse: String
     sexe:Sexe
     nationalite: String
+    password:String
 }
 type Client {
     id: ID!
@@ -50,7 +72,9 @@ type Compte {
     id: ID!
     numero: String!
     typeCompte: TypeCompte
+    libelle:String
     dateCreation:String
+    statut: StatutCompte!
     solde:Int
     proprietaire:Client
 }
@@ -77,6 +101,8 @@ type ActivationResponse {
     message: String
 }
 
+
+
 input UserInput {
     nom: String
     prenom: String
@@ -96,6 +122,7 @@ input TransactionInput{
 }
 input CompteInput{
     typeCompte: TypeCompte
+    libelle:String
     solde:Int
     proprietaireId:ID
 }
@@ -112,18 +139,34 @@ input ClientInput {
     password:String
 }
 
-
+input TransactionFilterInput {
+    startDate: String
+    endDate: String
+    minAmount: Int
+    maxAmount: Int
+    types: [TransactionType]
+    status: [String]
+    search: String
+}
 
 type Query {
+
+    me: Me
+
     client(id: ID!): Client
     clients(page: Int, size: Int): [Client]
     comptes(page: Int, size: Int): [Compte]
     transactions(page:Int,size:Int): [Transaction]
 
+    comptesParClientId(clientId: ID!): [Compte]
     getTransactions(compteId:String,startDate:String,endDate:String): [Transaction]
 
-    getReleve(compteId:String,startDate:String,endDate:String):[Releve]
+    getReleve(compteId:String!, startDate:String!, endDate:String!): Releve
+
+    accountById(id: ID!): Compte
+
 }
+
 
 type Mutation {
     createClient(input: ClientInput!): Client

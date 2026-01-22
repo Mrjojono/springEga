@@ -45,14 +45,12 @@ public class CompteController {
     }
 
     @MutationMapping
-    @PreAuthorize("hasRole('AGENT_ADMIN') or hasRole('SUPER_ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     public Compte createCompte(@Argument("input") @Valid CompteInput compteInput) {
-
         Optional<Client> client = clientService.getClient(compteInput.getProprietaireId());
         if (client.isEmpty()) {
             throw new ResourceNotFoundException("Le propriétaire du compte n'existe pas !");
         }
-
         return compteService.saveCompte(compteInput);
     }
 
@@ -74,4 +72,95 @@ public class CompteController {
     public Compte updateCompte(@Argument String id, @Argument("compte") @Valid CompteUpdateInput input) {
         return compteService.updateCompte(id, input);
     }
+
+
+    @QueryMapping
+    @PreAuthorize("isAuthenticated()")
+    public List<Compte> comptesParClientId(@Argument String clientId) {
+        try {
+            final String id = clientId.trim();
+            if (id.isEmpty()) {
+                throw new IllegalArgumentException("L'identifiant du client ne peut pas être vide.");
+            }
+            Client client = clientRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Client non trouvé avec l'id : " + id));
+
+
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth == null || !auth.isAuthenticated()) {
+                throw new AccessDeniedException("Utilisateur non authentifié.");
+            }
+
+
+            boolean isAdmin = auth.getAuthorities().stream()
+                    .anyMatch(a -> "ROLE_AGENT_ADMIN".equals(a.getAuthority()) || "ROLE_SUPER_ADMIN".equals(a.getAuthority()));
+
+            if (!isAdmin) {
+                String principalName = auth.getName();
+                String clientEmail = (client.getEmail() == null) ? null : client.getEmail().trim();
+
+                if (principalName == null || !principalName.equalsIgnoreCase(clientEmail)) {
+                    throw new AccessDeniedException("Vous n'êtes pas autorisé à consulter les comptes de ce client.");
+                }
+            }
+
+            return compteService.findComptesByClientId(id);
+
+        } catch (ResourceNotFoundException | AccessDeniedException | IllegalArgumentException ex) {
+
+            throw ex;
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            throw new RuntimeException("Erreur lors de la récupération des comptes du client.", ex);
+        }
+    }
+
+    @QueryMapping
+    @PreAuthorize("isAuthenticated()")
+    public Compte accountById(@Argument String id) {
+
+        try {
+            if (id == null || id.trim().isEmpty()) {
+                throw new IllegalArgumentException("L'identifiant du compte ne peut pas être vide.");
+            }
+
+            Compte compte = compteService.showCompteById(id.trim())
+                    .orElseThrow(() ->
+                            new ResourceNotFoundException("Compte non trouvé avec l'id : " + id)
+                    );
+
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth == null || !auth.isAuthenticated()) {
+                throw new AccessDeniedException("Utilisateur non authentifié.");
+            }
+
+            boolean isAdmin = auth.getAuthorities().stream()
+                    .anyMatch(a ->
+                            "ROLE_AGENT_ADMIN".equals(a.getAuthority())
+                                    || "ROLE_SUPER_ADMIN".equals(a.getAuthority())
+                                    || "ROLE_ADMIN".equals(a.getAuthority())
+                    );
+
+
+            if (!isAdmin) {
+                String principalName = auth.getName(); // souvent l'email
+                String ownerEmail = compte.getClient() != null
+                        ? compte.getClient().getEmail()
+                        : null;
+
+                if (ownerEmail == null || !ownerEmail.equalsIgnoreCase(principalName)) {
+                    throw new AccessDeniedException("Vous n'êtes pas autorisé à consulter ce compte.");
+                }
+            }
+
+            return compte;
+
+        } catch (ResourceNotFoundException | AccessDeniedException | IllegalArgumentException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            throw new RuntimeException("Erreur lors de la récupération du compte.", ex);
+        }
+    }
+
+
 }

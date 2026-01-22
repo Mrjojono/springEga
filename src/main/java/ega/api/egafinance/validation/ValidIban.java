@@ -10,7 +10,6 @@ import java.lang.annotation.*;
 @Constraint(validatedBy = IbanValidator.class)
 @Documented
 public @interface ValidIban {
-
     String message() default "Le numéro IBAN n'est pas valide";
 
     Class<?>[] groups() default {};

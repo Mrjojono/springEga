@@ -26,7 +26,7 @@ public class User {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false)
-    private Role role;
+    private Role role = Role.CLIENT;
 
     // Enumération des rôles possibles
     public enum Role {
@@ -36,6 +36,14 @@ public class User {
         USER,
         ADMIN
     }
+
+    @PrePersist
+    public void prePersist() {
+        if (this.role == null) {
+            this.role = Role.CLIENT;
+        }
+    }
+
 
 
 }

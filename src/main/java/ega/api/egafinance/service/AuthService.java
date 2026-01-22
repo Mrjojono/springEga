@@ -49,7 +49,7 @@ public class AuthService implements IAuthService {
         Client client = clientMapper.toClientRegister(userRegisterInput);
 
         client.setPassword(passwordEncoder.encode(userRegisterInput.getPassword()));
-        client.setRole(User.Role.CLIENT);
+        client.setRole(User.Role.valueOf(userRegisterInput.getRole()));
 
         return clientRepository.save(client);
     }

@@ -61,7 +61,7 @@ public class ClientController {
     }
 
     @MutationMapping
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasRole('CLIENT') or hasRole('AGENT_ADMIN') or hasRole('SUPER_ADMIN')")
     public Boolean deleteClient(@Argument String id) {
         return clientService.deleteClient(id);
     }
@@ -73,7 +73,6 @@ public class ClientController {
         String loggedInUserEmail = authentication.getName();
         String role = authentication.getAuthorities().iterator().next().getAuthority();
 
-        //verification pour modification que des ces propres informations
         if (role.equals("ROLE_CLIENT")) {
             Client loggedInClient = clientService.getOneClientByEmail(loggedInUserEmail)
                     .orElseThrow(() -> new ResourceNotFoundException("Utilisateur connecté introuvable"));

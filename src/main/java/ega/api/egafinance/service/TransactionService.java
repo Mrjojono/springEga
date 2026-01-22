@@ -11,15 +11,14 @@ import ega.api.egafinance.repository.TransactionRepository;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -47,20 +46,18 @@ public class TransactionService implements ITransactionService {
             throw new IllegalArgumentException("Le montant doit être supérieur à zéro !");
         }
 
-
         Compte compteDest = null;
         Compte compteSource = null;
 
         switch (transactionType) {
-            case DEPOT:
-
-                compteDest = compteRepository.findById(idCompteDest).orElseThrow(() -> new ResourceNotFoundException("Compte destination introuvable avec l'ID : " + idCompteDest));
+            case DEPOT, REMBOURSEMENT:
+                compteDest = compteRepository.findById(idCompteDest)
+                        .orElseThrow(() -> new ResourceNotFoundException("Compte destination introuvable avec l'ID : " + idCompteDest));
                 compteDest.setSolde(compteDest.getSolde().add(montant));
                 compteRepository.save(compteDest);
                 break;
 
             case RETRAIT:
-                // Pour un retrait, seul le compte source est requis
                 compteSource = compteRepository.findById(idCompteSource)
                         .orElseThrow(() -> new ResourceNotFoundException("Compte source introuvable avec l'ID : " + idCompteSource));
 
@@ -73,7 +70,7 @@ public class TransactionService implements ITransactionService {
                 break;
 
             case VIREMENT:
-                // Pour un virement, les comptes source et destination sont requis
+            case PAIEMENT:
                 compteSource = compteRepository.findById(idCompteSource)
                         .orElseThrow(() -> new ResourceNotFoundException("Compte source introuvable avec l'ID : " + idCompteSource));
                 compteDest = compteRepository.findById(idCompteDest)
@@ -89,30 +86,6 @@ public class TransactionService implements ITransactionService {
                 compteRepository.save(compteDest);
                 break;
 
-            case PAIEMENT:
-                // Pour un paiement, on traite cela comme un virement avec un compte destination "fournisseur"
-                compteSource = compteRepository.findById(idCompteSource)
-                        .orElseThrow(() -> new ResourceNotFoundException("Compte source introuvable avec l'ID : " + idCompteSource));
-                compteDest = compteRepository.findById(idCompteDest)
-                        .orElseThrow(() -> new ResourceNotFoundException("Compte destination introuvable avec l'ID : " + idCompteDest));
-
-                if (compteSource.getSolde().compareTo(montant) < 0) {
-                    throw new IllegalArgumentException("Fonds insuffisants pour le paiement !");
-                }
-
-                compteSource.setSolde(compteSource.getSolde().subtract(montant));
-                compteDest.setSolde(compteDest.getSolde().add(montant));
-                compteRepository.save(compteSource);
-                compteRepository.save(compteDest);
-                break;
-
-            case REMBOURSEMENT:
-                // Pour un remboursement, cela peut être traité comme un dépôt avec un historique de dette remboursée
-                compteDest = compteRepository.findById(idCompteDest).orElseThrow(() -> new ResourceNotFoundException("Compte destination introuvable avec l'ID : " + idCompteDest));
-
-                compteDest.setSolde(compteDest.getSolde().add(montant));
-                compteRepository.save(compteDest);
-                break;
             default:
                 throw new IllegalArgumentException("Type de transaction non pris en charge !");
         }
@@ -126,32 +99,39 @@ public class TransactionService implements ITransactionService {
         return transactionRepository.save(transaction);
     }
 
-
     @Override
     public List<Transaction> getTransactionsByCompteAndPeriod(String compteId, LocalDateTime startDate, LocalDateTime endDate, String loggedUserRole, String loggedUserEmail) {
 
         if (startDate.isAfter(endDate)) {
             throw new IllegalArgumentException("La date de début doit être antérieure à la date de fin.");
         }
-        // Récupérer le compte en question depuis la base
-        Compte compte = compteRepository.findById(compteId).orElseThrow(() -> new ResourceNotFoundException("Compte introuvable avec l'ID : " + compteId));
 
+        Compte compte = compteRepository.findById(compteId)
+                .orElseThrow(() -> new ResourceNotFoundException("Compte introuvable avec l'ID : " + compteId));
 
-        if (loggedUserRole.equals("ROLE_CLIENT")) {
-            if (!compte.getClient().getEmail().equals(loggedUserEmail)) {
+        if (loggedUserRole != null && loggedUserRole.equalsIgnoreCase("ROLE_CLIENT")) {
+            if (compte.getClient() == null || compte.getClient().getEmail() == null ||
+                    !compte.getClient().getEmail().equalsIgnoreCase(loggedUserEmail)) {
                 throw new AccessDeniedException("Vous ne pouvez consulter les transactions que de vos propres comptes !");
             }
         }
 
-
+        // Récupérer toutes les transactions liées au compte (source OU destination)
         List<Transaction> sourceTransactions =
                 transactionRepository.findAllByCompteSourceIdAndDateCreationBetween(compteId, startDate, endDate);
         List<Transaction> destinationTransactions =
                 transactionRepository.findAllByCompteDestinationIdAndDateCreationBetween(compteId, startDate, endDate);
 
-        sourceTransactions.addAll(destinationTransactions);
-        return sourceTransactions;
+        // Fusionner et trier par date de création asc
+        List<Transaction> combined = new ArrayList<>();
+        if (sourceTransactions != null) combined.addAll(sourceTransactions);
+        if (destinationTransactions != null) combined.addAll(destinationTransactions);
+
+        combined.sort(Comparator.comparing(Transaction::getDateCreation));
+
+        return combined;
     }
+
 
     public Releve getReleve(String compteId, LocalDateTime startDate, LocalDateTime endDate) {
 
@@ -159,38 +139,59 @@ public class TransactionService implements ITransactionService {
             throw new IllegalArgumentException("La date de début doit être antérieure à la date de fin !");
         }
 
-        Compte compte = compteRepository.findById(compteId).orElseThrow(() -> new ResourceNotFoundException("Compte introuvable avec l'ID : " + compteId));
-
-        BigDecimal soldeInitial = compte.getSolde();
-        BigDecimal soldeFinal = soldeInitial;
+        Compte compte = compteRepository.findById(compteId)
+                .orElseThrow(() -> new ResourceNotFoundException("Compte introuvable avec l'ID : " + compteId));
 
 
         List<Transaction> allTransactions = transactionRepository.findAllByCompteSourceIdOrCompteDestinationId(compteId, compteId);
 
-        // Liste pour stocker uniquement les transactions dans la période demandée
+
+        BigDecimal deltaAfterOrEqualStart = BigDecimal.ZERO;
+
+
         List<Transaction> filteredTransactions = new ArrayList<>();
 
-        for (Transaction transaction : allTransactions) {
+        for (Transaction tx : allTransactions) {
+            LocalDateTime txDate = tx.getDateCreation();
+            if (txDate == null) continue;
 
-            if (transaction.getDateCreation().isBefore(startDate)) {
-                if (transaction.getCompteSource() != null && transaction.getCompteSource().getId().equals(compteId)) {
-                    soldeInitial = soldeInitial.subtract(transaction.getMontant());
-                } else if (transaction.getCompteDestination() != null && transaction.getCompteDestination().getId().equals(compteId)) {
-                    soldeInitial = soldeInitial.add(transaction.getMontant());
-                }
+            // effet de la transaction sur le compte (positive si le compte est destination, négative si source)
+            BigDecimal effect = BigDecimal.ZERO;
+            if (tx.getCompteSource() != null && compteId.equals(tx.getCompteSource().getId())) {
+                effect = tx.getMontant().negate();
+            } else if (tx.getCompteDestination() != null && compteId.equals(tx.getCompteDestination().getId())) {
+                effect = tx.getMontant();
             }
 
-            if (!transaction.getDateCreation().isBefore(startDate) && !transaction.getDateCreation().isAfter(endDate)) {
-                filteredTransactions.add(transaction);
+            // si transaction >= startDate, elle participe au deltaAfterOrEqualStart (à retrancher pour retrouver le solde au start)
+            if (!txDate.isBefore(startDate)) {
+                deltaAfterOrEqualStart = deltaAfterOrEqualStart.add(effect);
+            }
 
-                if (transaction.getCompteSource() != null && transaction.getCompteSource().getId().equals(compteId)) {
-                    soldeFinal = soldeFinal.subtract(transaction.getMontant());
-                } else if (transaction.getCompteDestination() != null && transaction.getCompteDestination().getId().equals(compteId)) {
-                    soldeFinal = soldeFinal.add(transaction.getMontant());
-                }
+            // si transaction est dans la période [startDate, endDate], on l'ajoute au relevé
+            if ((!txDate.isBefore(startDate)) && (!txDate.isAfter(endDate))) {
+                filteredTransactions.add(tx);
             }
         }
 
+        // solde courant = compte.getSolde() (final actuel)
+        BigDecimal soldeCourant = compte.getSolde() != null ? compte.getSolde() : BigDecimal.ZERO;
+
+        // soldeInitial = soldeCourant - deltaAfterOrEqualStart
+        BigDecimal soldeInitial = soldeCourant.subtract(deltaAfterOrEqualStart);
+
+        // calculer soldeFinal en appliquant les effets des transactions filtrées
+        BigDecimal soldeFinal = soldeInitial;
+        for (Transaction tx : filteredTransactions) {
+            if (tx.getCompteSource() != null && compteId.equals(tx.getCompteSource().getId())) {
+                soldeFinal = soldeFinal.subtract(tx.getMontant());
+            } else if (tx.getCompteDestination() != null && compteId.equals(tx.getCompteDestination().getId())) {
+                soldeFinal = soldeFinal.add(tx.getMontant());
+            }
+        }
+
+        // Trier les transactions du relevé
+        filteredTransactions.sort(Comparator.comparing(Transaction::getDateCreation));
 
         Releve releve = new Releve();
         releve.setCompte(compte);
@@ -200,5 +201,4 @@ public class TransactionService implements ITransactionService {
 
         return releve;
     }
-
 }

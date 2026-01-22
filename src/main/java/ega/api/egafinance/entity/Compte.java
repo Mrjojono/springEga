@@ -24,16 +24,21 @@ public class Compte {
     @NotBlank(message = "Le numéro de compte est obligatoire")
     @Size(min = 10, max = 34, message = "Le numéro de compte doit contenir entre 10 et 34 caractères")
     @ValidIban(message = "Le numéro IBAN n'est pas valide")
+    @Column(unique = true, nullable = false)
     private String numero;
 
     @Enumerated(EnumType.STRING)
     private TypeCompte typeCompte;
+
+    private String libelle;
 
     private LocalDateTime dateCreation;
 
     private LocalDateTime dateUpdate;
 
     private BigDecimal solde;
+
+    private StatutCompte statutCompte;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "client_id")
@@ -50,4 +55,6 @@ public class Compte {
     public void onUpdate() {
         this.dateUpdate = LocalDateTime.now();
     }
+
+
 }
