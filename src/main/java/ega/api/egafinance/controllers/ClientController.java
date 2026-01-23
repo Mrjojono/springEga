@@ -29,7 +29,7 @@ public class ClientController {
     private final ClientMapper clientMapper;
 
     @QueryMapping
-    @PreAuthorize("hasRole('AGENT_ADMIN') or hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasRole('AGENT_ADMIN') or hasRole('SUPER_ADMIN') or hasRole('CLIENT')")
     public List<Client> clients() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         log.info("Utilisateur authentifié dans SecurityContext: {}", authentication);

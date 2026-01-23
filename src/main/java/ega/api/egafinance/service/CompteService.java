@@ -11,19 +11,16 @@ import ega.api.egafinance.repository.ClientRepository;
 import ega.api.egafinance.repository.CompteRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.stereotype.Service;
-import org.springframework.data.domain.Pageable;
-
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
-
 import org.iban4j.CountryCode;
 import org.iban4j.Iban;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.security.SecureRandom;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -53,7 +50,6 @@ public class CompteService implements ICompteService {
         return compteRepository.findByClientId(clientId);
     }
 
-
     public Optional<Compte> showCompteById(String id) {
         return compteRepository.findById(id);
     }
@@ -78,19 +74,15 @@ public class CompteService implements ICompteService {
                 ));
         compte.setClient(client);
 
-        // Générer un numéro IBAN unique (avec retry en cas de doublon)
         String numeroGenere = null;
         int maxAttempts = 10;
         int attempts = 0;
 
         while (attempts < maxAttempts) {
             numeroGenere = generateNumeroCompte(client);
-
-            // Vérifier si le numéro existe déjà
             if (!compteRepository.existsByNumero(numeroGenere)) {
-                break; // Numéro unique trouvé
+                break;
             }
-
             attempts++;
         }
 
@@ -103,7 +95,6 @@ public class CompteService implements ICompteService {
         if (compte.getSolde() == null) {
             compte.setSolde(BigDecimal.ZERO);
         }
-
         compte.setStatutCompte(StatutCompte.ACTIF);
         return compteRepository.save(compte);
     }
@@ -151,6 +142,10 @@ public class CompteService implements ICompteService {
         if (compteUpdateInput.getTypeCompte() != null) {
             existingCompte.setTypeCompte(compteUpdateInput.getTypeCompte());
         }
+
+        if (compteUpdateInput.getLibelle() != null) {
+            existingCompte.setLibelle(compteUpdateInput.getLibelle());
+        }
         if (compteUpdateInput.getProprietaireId() != null) {
             Client proprietaire = clientRepository.findById(compteUpdateInput.getProprietaireId())
                     .orElseThrow(() -> new ResourceNotFoundException(
@@ -161,7 +156,6 @@ public class CompteService implements ICompteService {
 
         return compteRepository.save(existingCompte);
     }
-
 
 
     /**
@@ -201,9 +195,7 @@ public class CompteService implements ICompteService {
         }
     }
 
-    /**
-     * Génère un IBAN manuellement sans iban4j (fallback)
-     */
+
     private String generateManualIban(SecureRandom random) {
         // Format: FR + 2 chiffres contrôle + 23 chiffres BBAN
         String bankCode = String.format("%05d", 10000 + random.nextInt(90000));
@@ -220,14 +212,10 @@ public class CompteService implements ICompteService {
         return "FR" + checkDigits + bban;
     }
 
-    /**
-     * Calcule les 2 chiffres de contrôle de l'IBAN (modulo 97)
-     */
-    private String calculateIbanCheckDigits(String countryCode, String bban) {
-        // Déplacer le code pays et "00" à la fin
-        String rearranged = bban + countryCode + "00";
 
-        // Convertir les lettres en chiffres (A=10, B=11, ..., Z=35)
+    private String calculateIbanCheckDigits(String countryCode, String bban) {
+
+        String rearranged = bban + countryCode + "00";
         StringBuilder numeric = new StringBuilder();
         for (char c : rearranged.toCharArray()) {
             if (Character.isLetter(c)) {
@@ -237,7 +225,6 @@ public class CompteService implements ICompteService {
             }
         }
 
-        // Calculer modulo 97
         java.math.BigInteger mod = new java.math.BigInteger(numeric.toString())
                 .mod(java.math.BigInteger.valueOf(97));
         int checkDigits = 98 - mod.intValue();
@@ -295,9 +282,6 @@ public class CompteService implements ICompteService {
         };
     }
 
-    /**
-     * Génère un code guichet selon le pays
-     */
     private String generateBranchCode(CountryCode country, SecureRandom random) {
         return switch (country) {
             case FR -> String.format("%05d", 10000 + random.nextInt(90000)); // 5 chiffres
@@ -311,9 +295,7 @@ public class CompteService implements ICompteService {
         };
     }
 
-    /**
-     * Génère un numéro de compte selon le pays
-     */
+
     private String generateAccountNumber(CountryCode country, SecureRandom random) {
         return switch (country) {
             // France: BBAN = 5 (bank) + 5 (branch) + 11 (account) + 2 (key) = 23

@@ -1,32 +1,37 @@
+
 enum Sexe {
     HOMME
     FEMME
     AUTRE
 }
+
 enum Role {
-    CLIENT,
-    AGENT_ADMIN,
-    SUPER_ADMIN,
-    USER,
+    CLIENT
+    AGENT_ADMIN
+    SUPER_ADMIN
+    USER
     ADMIN
 }
+
 enum TypeCompte {
-    COURANT,
-    EPARGNE,
+    COURANT
+    EPARGNE
     PROFESSIONNEL
 }
+
 enum TransactionType {
-    DEPOT,
-    RETRAIT,
-    VIREMENT,
-    PAIEMENT,
+    DEPOT
+    RETRAIT
+    VIREMENT
+    PAIEMENT
     REMBOURSEMENT
 }
+
 enum StatutCompte {
-    ACTIF,
-    SUSPENDU,
-    FERME,
-    EN_ATTENTE,
+    ACTIF
+    SUSPENDU
+    FERME
+    EN_ATTENTE
     INACTIF
 }
 
@@ -52,10 +57,11 @@ type User {
     telephone: String
     role: Role
     adresse: String
-    sexe:Sexe
+    sexe: Sexe
     nationalite: String
-    password:String
+    password: String
 }
+
 type Client {
     id: ID!
     nom: String!
@@ -66,42 +72,86 @@ type Client {
     email: String
     telephone: String
     nationalite: String
-    identifiant:String
+    identifiant: String
 }
+
 type Compte {
     id: ID!
     numero: String!
     typeCompte: TypeCompte
-    libelle:String
-    dateCreation:String
-    statut: StatutCompte!
-    solde:Int
-    proprietaire:Client
+    libelle: String
+    dateCreation: String
+    statutCompte: StatutCompte!
+    solde: Int
+    proprietaire: Client
 }
+
 type Transaction {
     id: ID!
     montant: Int!
-    dateCreation:String
-    dateUpdate:String
-    compteSource:Compte
-    compteDestination:Compte
+    dateCreation: String
+    dateUpdate: String
+    transactionType: TransactionType!
+    compteSource: Compte
+    compteDestination: Compte
 }
-type Releve{
-    compte:Compte
-    soldeInitial:Int
-    soldeFinal:Int
-    transactions:[Transaction]
+
+type Releve {
+    compte: Compte!
+    clientNom: String
+    clientPrenom: String
+    clientEmail: String
+    clientTelephone: String
+    clientAdresse: String
+    clientIdentifiant: String
+
+    dateDebut: String!
+    dateFin: String!
+    dateGeneration: String!
+
+    soldeInitial: Float!
+    soldeFinal: Float!
+
+    totalDepots: Float!
+    totalRetraits: Float!
+    totalVirements: Float!
+    nombreTransactions: Int!
+
+    transactions: [Transaction]!
+
+    numeroReleve: String!
+    periode: String!
 }
+
+type ReleveSummary {
+    numeroReleve: String!
+    periode: String!
+    numeroCompte: String!
+    clientNom: String!
+    soldeInitial: Float!
+    soldeFinal: Float!
+    variation: Float!
+    nombreTransactions: Int!
+}
+
 type AuthResponse {
     token: String!
     user: User!
 }
+
 type ActivationResponse {
     success: Boolean!
     message: String
 }
 
-
+type ComptePublicInfo {
+    id: ID!
+    numero: String!
+    typeCompte: TypeCompte
+    libelle: String
+    proprietaireNom: String!
+    proprietaireEmail: String
+}
 
 input UserInput {
     nom: String
@@ -110,22 +160,25 @@ input UserInput {
     telephone: String
     password: String!
     role: Role
-    sexe:Sexe
+    sexe: Sexe
     adresse: String
     nationalite: String
 }
-input TransactionInput{
-    montant:Int!
-    compte_source_Id:ID
-    compte_destination_Id:ID
-    transactionType:TransactionType!
+
+input TransactionInput {
+    montant: Int!
+    compte_source_Id: ID
+    compte_destination_Id: ID
+    transactionType: TransactionType!
 }
-input CompteInput{
+
+input CompteInput {
     typeCompte: TypeCompte
-    libelle:String
-    solde:Int
-    proprietaireId:ID
+    libelle: String
+    solde: Int
+    proprietaireId: ID
 }
+
 input ClientInput {
     nom: String!
     prenom: String!
@@ -135,8 +188,8 @@ input ClientInput {
     email: String
     telephone: String
     nationalite: String
-    role:Role
-    password:String
+    role: Role
+    password: String
 }
 
 input TransactionFilterInput {
@@ -150,43 +203,61 @@ input TransactionFilterInput {
 }
 
 type Query {
-
+    # Current authenticated user
     me: Me
 
+    # Clients / comptes
     client(id: ID!): Client
     clients(page: Int, size: Int): [Client]
     comptes(page: Int, size: Int): [Compte]
-    transactions(page:Int,size:Int): [Transaction]
-
     comptesParClientId(clientId: ID!): [Compte]
-    getTransactions(compteId:String,startDate:String,endDate:String): [Transaction]
-
-    getReleve(compteId:String!, startDate:String!, endDate:String!): Releve
-
     accountById(id: ID!): Compte
+    searchComptesForTransfer(email: String!): [ComptePublicInfo]
 
+
+    transactions(page: Int, size: Int): [Transaction]
+
+    # Transactions filtered by compte and period (server requires startDate + endDate in ISO local format)
+    getTransactions(compteId: String!, startDate: String!, endDate: String!): [Transaction]
+
+    # Relevé (détail JSON)
+    getReleve(compteId: String!, startDate: String!, endDate: String!): Releve
+
+    # Relevé PDF as Base64 (convenient for front to preview/download)
+    getRelevePdfBase64(compteId: String!, startDate: String!, endDate: String!): String
+
+    # Preview PDF (same as getRelevePdfBase64)
+    previewRelevePdfBase64(compteId: String!, startDate: String!, endDate: String!): String
+
+    # Optional reporting queries
+    getReleveSummary(compteId: String!, startDate: String!, endDate: String!): ReleveSummary
+    getRelevesMensuels(compteId: String!, annee: Int!): [ReleveSummary]
 }
 
-
 type Mutation {
+    # Client / compte / user management (kept as in REST)
     createClient(input: ClientInput!): Client
-    deleteClient(id : ID!) : Boolean
+    deleteClient(id: ID!): Boolean
 
-    updateClient(id:ID!, client:ClientInput!):Client
-    updateCompte(id:ID!,compte:CompteInput!):Compte
+    updateClient(id: ID!, client: ClientInput!): Client
+    updateCompte(id: ID!, compte: CompteInput!): Compte
 
-    createCompte(input:CompteInput!) : Compte
+    createCompte(input: CompteInput!): Compte
     deleteCompte(id: ID!): Boolean
-    versement(input:TransactionInput!):Transaction
+
+    # Create a transaction (versement) - returns created Transaction
+    versement(input: TransactionInput!): Transaction
 
     createUser(input: UserInput!): User
-
     updateUser(id: ID!, user: UserInput!): User
     deleteUser(id: ID!): Boolean
 
+    # Authentication
     login(email: String!, password: String!): AuthResponse!
 
-    completeActivation(token:String!, password:String!):ActivationResponse!
-
+    completeActivation(token: String!, password: String!): ActivationResponse!
     initiateActivation(identifiant: String!, email: String!): ActivationResponse!
+
+    # Send relevé by email (returns a message/status)
+    sendReleveByEmail(compteId: String!, startDate: String!, endDate: String!, customEmail: String): String
 }

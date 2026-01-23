@@ -17,16 +17,6 @@ import java.time.LocalDateTime;
 public class Transaction {
 
 
-    public enum TransactionType {
-        DEPOT,
-        RETRAIT,
-        VIREMENT,
-        PAIEMENT,
-        FRAIS,
-        INTERET,
-        REMBOURSEMENT
-    }
-
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;

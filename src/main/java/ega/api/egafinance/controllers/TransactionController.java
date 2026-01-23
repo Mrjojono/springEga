@@ -34,7 +34,7 @@ public class TransactionController {
     private final CompteService compteService;
 
     @QueryMapping
-    @PreAuthorize("hasRole('AGENT_ADMIN') or hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasRole('AGENT_ADMIN') or hasRole('SUPER_ADMIN') or hasRole('CLIENT') ")
     public List<Transaction> transactions(@Argument Integer page, @Argument Integer size) {
         int pageIndex = (page != null) ? page : 0;
         int pageSize = (size != null) ? size : 10;
@@ -94,7 +94,7 @@ public class TransactionController {
 
     @QueryMapping
     @PreAuthorize("hasRole('CLIENT') or hasRole('AGENT_ADMIN') or hasRole('SUPER_ADMIN')")
-    public Releve getReleve(
+    public Releve getReleves(
             @Argument String compteId,
             @Argument String startDate,
             @Argument String endDate) {

@@ -1,6 +1,7 @@
 package ega.api.egafinance.dto;
 
 import ega.api.egafinance.entity.Transaction;
+import ega.api.egafinance.entity.TransactionType;
 import ega.api.egafinance.entity.TypeCompte;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -17,7 +18,7 @@ public class TransactionInput {
 
     private String compte_source_Id;
 
-    private Transaction.TransactionType transactionType;
+    private String transactionType;
 
     private String compte_destination_Id;
 }

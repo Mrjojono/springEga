@@ -2,9 +2,11 @@ package ega.api.egafinance.controllers;
 
 import ega.api.egafinance.dto.ClientInput;
 import ega.api.egafinance.dto.CompteInput;
+import ega.api.egafinance.dto.ComptePublicInfo;
 import ega.api.egafinance.dto.CompteUpdateInput;
 import ega.api.egafinance.entity.Client;
 import ega.api.egafinance.entity.Compte;
+import ega.api.egafinance.entity.StatutCompte;
 import ega.api.egafinance.entity.Transaction;
 import ega.api.egafinance.exception.ResourceNotFoundException;
 import ega.api.egafinance.repository.ClientRepository;
@@ -69,8 +71,8 @@ public class CompteController {
 
     @MutationMapping
     @PreAuthorize("hasRole('AGENT_ADMIN') or hasRole('SUPER_ADMIN')")
-    public Compte updateCompte(@Argument String id, @Argument("compte") @Valid CompteUpdateInput input) {
-        return compteService.updateCompte(id, input);
+    public Compte updateCompte(@Argument String id, @Argument("compte") @Valid CompteUpdateInput compteUpdateInput) {
+        return compteService.updateCompte(id, compteUpdateInput);
     }
 
 
@@ -113,6 +115,71 @@ public class CompteController {
             throw new RuntimeException("Erreur lors de la récupération des comptes du client.", ex);
         }
     }
+
+
+
+    @QueryMapping
+    @PreAuthorize("isAuthenticated()")
+    public List<ComptePublicInfo> searchComptesForTransfer(@Argument String email) {
+        try {
+            if (email == null || email.trim().isEmpty()) {
+                return Collections.emptyList(); // Retourner liste vide au lieu d'erreur
+            }
+
+            String searchEmail = email.trim();
+            List<ComptePublicInfo> result = new ArrayList<>();
+
+            // Recherche partielle - trouve tous les emails qui contiennent le texte
+            List<Client> clients = clientRepository.findByEmailContainingIgnoreCase(searchEmail);
+
+            // Limiter à 10 résultats max pour éviter surcharge
+            int limit = Math.min(clients.size(), 10);
+
+            for (int i = 0; i < limit; i++) {
+                Client client = clients.get(i);
+                result.addAll(getPublicCompteInfo(client));
+            }
+
+            return result;
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            // Retourner liste vide en cas d'erreur au lieu de lancer exception
+            return Collections.emptyList();
+        }
+    }
+
+    private List<ComptePublicInfo> getPublicCompteInfo(Client client) {
+        List<ComptePublicInfo> result = new ArrayList<>();
+
+        try {
+            // Récupérer uniquement les comptes ACTIFS
+            List<Compte> comptes = compteService.findComptesByClientId(client.getId())
+                    .stream()
+                    .filter(c -> c.getStatutCompte() == StatutCompte.ACTIF)
+                    .collect(Collectors.toList());
+
+            // Mapper vers des infos publiques (sans exposer le solde)
+            for (Compte compte : comptes) {
+                ComptePublicInfo info = new ComptePublicInfo();
+                info.setId(compte.getId());
+                info.setNumero(compte.getNumero());
+                info.setTypeCompte(compte.getTypeCompte());
+                info.setLibelle(compte.getLibelle());
+                info.setProprietaireNom(client.getNom() + " " + client.getPrenom());
+                info.setProprietaireEmail(client.getEmail());
+                result.add(info);
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+
+        return result;
+    }
+
+
+
+
 
     @QueryMapping
     @PreAuthorize("isAuthenticated()")

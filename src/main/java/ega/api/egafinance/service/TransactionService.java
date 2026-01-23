@@ -4,6 +4,7 @@ import ega.api.egafinance.dto.TransactionInput;
 import ega.api.egafinance.entity.Compte;
 import ega.api.egafinance.entity.Releve;
 import ega.api.egafinance.entity.Transaction;
+import ega.api.egafinance.entity.TransactionType;
 import ega.api.egafinance.exception.ResourceNotFoundException;
 import ega.api.egafinance.mapper.TransactionMapper;
 import ega.api.egafinance.repository.CompteRepository;
@@ -19,6 +20,9 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static ega.api.egafinance.entity.TransactionType.DEPOT;
+import static ega.api.egafinance.entity.TransactionType.REMBOURSEMENT;
 
 @Service
 @AllArgsConstructor
@@ -40,7 +44,20 @@ public class TransactionService implements ITransactionService {
         BigDecimal montant = transactionInput.getMontant();
         String idCompteDest = transactionInput.getCompte_destination_Id();
         String idCompteSource = transactionInput.getCompte_source_Id();
-        Transaction.TransactionType transactionType = transactionInput.getTransactionType();
+
+        // transactionInput.getTransactionType() doit renvoyer une chaîne (ex: "DEPOT")
+        String txRaw = transactionInput.getTransactionType();
+        if (txRaw == null || txRaw.trim().isEmpty()) {
+            throw new IllegalArgumentException("Le type de transaction est requis");
+        }
+
+        // Parse safe vers l'enum
+        final TransactionType transactionType;
+        try {
+            transactionType = TransactionType.valueOf(txRaw.trim().toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException("Type de transaction invalide : " + txRaw);
+        }
 
         if (montant == null || montant.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Le montant doit être supérieur à zéro !");
@@ -50,7 +67,11 @@ public class TransactionService implements ITransactionService {
         Compte compteSource = null;
 
         switch (transactionType) {
-            case DEPOT, REMBOURSEMENT:
+            case DEPOT:
+            case REMBOURSEMENT:
+                if (idCompteDest == null || idCompteDest.trim().isEmpty()) {
+                    throw new IllegalArgumentException("L'ID du compte destination est requis pour un dépôt/ remboursement");
+                }
                 compteDest = compteRepository.findById(idCompteDest)
                         .orElseThrow(() -> new ResourceNotFoundException("Compte destination introuvable avec l'ID : " + idCompteDest));
                 compteDest.setSolde(compteDest.getSolde().add(montant));
@@ -58,6 +79,9 @@ public class TransactionService implements ITransactionService {
                 break;
 
             case RETRAIT:
+                if (idCompteSource == null || idCompteSource.trim().isEmpty()) {
+                    throw new IllegalArgumentException("L'ID du compte source est requis pour un retrait");
+                }
                 compteSource = compteRepository.findById(idCompteSource)
                         .orElseThrow(() -> new ResourceNotFoundException("Compte source introuvable avec l'ID : " + idCompteSource));
 
@@ -71,6 +95,9 @@ public class TransactionService implements ITransactionService {
 
             case VIREMENT:
             case PAIEMENT:
+                if (idCompteSource == null || idCompteSource.trim().isEmpty() || idCompteDest == null || idCompteDest.trim().isEmpty()) {
+                    throw new IllegalArgumentException("Les IDs des comptes source et destination sont requis pour un virement/paiement");
+                }
                 compteSource = compteRepository.findById(idCompteSource)
                         .orElseThrow(() -> new ResourceNotFoundException("Compte source introuvable avec l'ID : " + idCompteSource));
                 compteDest = compteRepository.findById(idCompteDest)
@@ -92,6 +119,10 @@ public class TransactionService implements ITransactionService {
 
         // Enregistrer la transaction
         Transaction transaction = transactionMapper.toTransaction(transactionInput);
+
+        // S'assurer que l'entité a bien l'enum (si le mapper n'a reçu qu'une String)
+        transaction.setTransactionType(transactionType);
+
         transaction.setMontant(montant);
         transaction.setCompteSource(compteSource);
         transaction.setCompteDestination(compteDest);
@@ -133,6 +164,7 @@ public class TransactionService implements ITransactionService {
     }
 
 
+
     public Releve getReleve(String compteId, LocalDateTime startDate, LocalDateTime endDate) {
 
         if (startDate.isAfter(endDate)) {
@@ -142,45 +174,72 @@ public class TransactionService implements ITransactionService {
         Compte compte = compteRepository.findById(compteId)
                 .orElseThrow(() -> new ResourceNotFoundException("Compte introuvable avec l'ID : " + compteId));
 
-
-        List<Transaction> allTransactions = transactionRepository.findAllByCompteSourceIdOrCompteDestinationId(compteId, compteId);
-
+        // Récupérer toutes les transactions liées au compte
+        List<Transaction> allTransactions = transactionRepository
+                .findAllByCompteSourceIdOrCompteDestinationId(compteId, compteId);
 
         BigDecimal deltaAfterOrEqualStart = BigDecimal.ZERO;
-
-
         List<Transaction> filteredTransactions = new ArrayList<>();
+
+        // Statistiques
+        BigDecimal totalDepots = BigDecimal.ZERO;
+        BigDecimal totalRetraits = BigDecimal.ZERO;
+        BigDecimal totalVirements = BigDecimal.ZERO;
 
         for (Transaction tx : allTransactions) {
             LocalDateTime txDate = tx.getDateCreation();
             if (txDate == null) continue;
 
-            // effet de la transaction sur le compte (positive si le compte est destination, négative si source)
+            // Effet de la transaction sur le compte
             BigDecimal effect = BigDecimal.ZERO;
-            if (tx.getCompteSource() != null && compteId.equals(tx.getCompteSource().getId())) {
+            boolean isSource = tx.getCompteSource() != null && compteId.equals(tx.getCompteSource().getId());
+            boolean isDestination = tx.getCompteDestination() != null && compteId.equals(tx.getCompteDestination().getId());
+
+            if (isSource) {
                 effect = tx.getMontant().negate();
-            } else if (tx.getCompteDestination() != null && compteId.equals(tx.getCompteDestination().getId())) {
+            } else if (isDestination) {
                 effect = tx.getMontant();
             }
 
-            // si transaction >= startDate, elle participe au deltaAfterOrEqualStart (à retrancher pour retrouver le solde au start)
+            // Transactions >= startDate
             if (!txDate.isBefore(startDate)) {
                 deltaAfterOrEqualStart = deltaAfterOrEqualStart.add(effect);
             }
 
-            // si transaction est dans la période [startDate, endDate], on l'ajoute au relevé
+            // Transactions dans la période [startDate, endDate]
             if ((!txDate.isBefore(startDate)) && (!txDate.isAfter(endDate))) {
                 filteredTransactions.add(tx);
+
+                // Calculer les statistiques selon le type
+                TransactionType type = tx.getTransactionType();
+                if (type != null) {
+                    switch (type) {
+                        case DEPOT:
+                        case REMBOURSEMENT:
+                            if (isDestination) {
+                                totalDepots = totalDepots.add(tx.getMontant());
+                            }
+                            break;
+                        case RETRAIT:
+                            if (isSource) {
+                                totalRetraits = totalRetraits.add(tx.getMontant());
+                            }
+                            break;
+                        case VIREMENT:
+                        case PAIEMENT:
+                            if (isSource) {
+                                totalVirements = totalVirements.add(tx.getMontant());
+                            }
+                            break;
+                    }
+                }
             }
         }
 
-        // solde courant = compte.getSolde() (final actuel)
+        // Calcul des soldes
         BigDecimal soldeCourant = compte.getSolde() != null ? compte.getSolde() : BigDecimal.ZERO;
-
-        // soldeInitial = soldeCourant - deltaAfterOrEqualStart
         BigDecimal soldeInitial = soldeCourant.subtract(deltaAfterOrEqualStart);
 
-        // calculer soldeFinal en appliquant les effets des transactions filtrées
         BigDecimal soldeFinal = soldeInitial;
         for (Transaction tx : filteredTransactions) {
             if (tx.getCompteSource() != null && compteId.equals(tx.getCompteSource().getId())) {
@@ -190,15 +249,60 @@ public class TransactionService implements ITransactionService {
             }
         }
 
-        // Trier les transactions du relevé
+        // Trier les transactions
         filteredTransactions.sort(Comparator.comparing(Transaction::getDateCreation));
 
+        // Construire le relevé enrichi
         Releve releve = new Releve();
         releve.setCompte(compte);
+
+        // Informations du client
+        if (compte.getClient() != null) {
+            releve.setClientNom(compte.getClient().getNom());
+            releve.setClientPrenom(compte.getClient().getPrenom());
+            releve.setClientEmail(compte.getClient().getEmail());
+            releve.setClientTelephone(compte.getClient().getTelephone());
+            releve.setClientAdresse(compte.getClient().getAdresse());
+            releve.setClientIdentifiant(compte.getClient().getIdentifiant());
+        }
+
+        // Dates
+        releve.setDateDebut(startDate);
+        releve.setDateFin(endDate);
+        releve.setDateGeneration(LocalDateTime.now());
+
+        // Soldes
         releve.setSoldeInitial(soldeInitial);
         releve.setSoldeFinal(soldeFinal);
+
+        // Statistiques
+        releve.setTotalDepots(totalDepots);
+        releve.setTotalRetraits(totalRetraits);
+        releve.setTotalVirements(totalVirements);
+        releve.setNombreTransactions(filteredTransactions.size());
+
+        // Transactions
         releve.setTransactions(filteredTransactions);
+
+        // Générer un numéro de relevé unique
+        String numeroReleve = String.format("REL-%s-%s",
+                LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd")),
+                UUID.randomUUID().toString().substring(0, 8).toUpperCase()
+        );
+        releve.setNumeroReleve(numeroReleve);
+
+        // Format de période lisible
+        String periode = String.format("Du %s au %s",
+                startDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")),
+                endDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+        );
+        releve.setPeriode(periode);
 
         return releve;
     }
+
+
+
+
+
 }
